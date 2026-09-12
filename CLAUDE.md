@@ -53,6 +53,7 @@ Two more that inspect rather than assert:
 
 Balance harnesses (slow, minutes):
 
+    node probe.mjs [rung] [count] [seedBase]       # default 2 200 3000 — the player's seat
     node sim-test.mjs [seedBase] [rung] [count]   # default 1000 2 400 — headless games
     node sim-test.mjs 5000 2 200                  # a second seed range, to tell bias from noise
     node diff-test.mjs [gamesPerRung]             # is the difficulty ladder monotonic?
@@ -501,6 +502,8 @@ Two details are load-bearing. The card is drawn for **any** host you can select,
 
 Three things make this cheaper than deleting a feature usually is. The tally was **telling the player what they had just watched** — every capture flashed a shockwave and every broken host vanished off the map in front of them, so the numbers were a receipt for a war they had played. The real-time clock was never the game's own clock: `T.day` is, and `S.elapsed` only ever fed that one line — it **stays**, because `render.js` runs the besieged pulse off it, and it is an animation clock, not a score. And the whole ledger was write-only outside `ending()`, so nothing in the sim read it: `sim-test 1000 2 200` is **byte-identical** before and after, which is the same proof of non-interference the fog changes use, and it is worth spending the twenty seconds to get rather than reasoning about it. It gave back **158 B**.
 
+**Round 31 put the scenario's name on it**, so a result says which of the three boards it was won on: the line is now *Rise of the Golden Horn · 🔴 Crimson Mane · Warlord*. It is **guarded on the seed** — `S.seed === SCN[S.scn][1]` — because a seed in the URL hash overrides the scenario's own on boot, and that is precisely the "play an unseen map" path, where naming it would put a campaign's title on a board it never generated. The guard is 10 B of the feature's 25, and hoisting `SCN[S.scn]` into a local paid for half of it: written out twice it cost 21 B, which is the sort of thing worth one measurement before accepting. `dom-test` reads the expected name off `SCN` rather than quoting it, and pins the guard on a hand-set seed — mutation-checked both ways, the name deleted and the guard dropped, because every other end-screen assertion passes under the second one.
+
 `dom-test` counts the `<b>` tags on the end screen and asserts there is exactly **one**. That shape is deliberate: the assertions it replaced were `!/largest host/` and `!/cities held/`, which are precisely the pattern this file warns about — a negative keyed on a string, which passes for free the moment the string is gone. Counting what is there fails loudly when a number comes back; four mutations were tried against it, including restoring the long titles and the real-time clock.
 
 **Populace and walls are the panel's, not the map's.** `👥pop 🛡walls` used to be drawn under every city, with `🌫️` in their place on a fogged one; that whole line is gone. The numbers are now `👥 Militia` and `🛡️ Walls` (`c.s | 0` against `c.m`, so mending has something to read against) in the city panel. The shield carries a **VS16**, like the `⚔️` a row below it: `U+1F6E1` defaults to *text* presentation, so without it the panel gets a monochrome outline where every other row label is a colour emoji. The bare `🛡` the map used got away with it because canvas resolves emoji through a different font stack. Nothing replaces the fog marker: a fogged city already greys its ring and name and answers `???` in the panel, so the 🌫️ was a third telling of the same thing. `dom-test` pins it: the panel reports the two numbers, and no canvas text under a city name contains `👥`, `🛡` or `🌫️`.
@@ -510,6 +513,26 @@ Three things make this cheaper than deleting a feature usually is. The tally was
 ## Working here
 
 **Read the source; don't delegate exploring it.** All of `src/` is ~20k tokens, and the game logic without the vendored audio is ~15k. Spawning exploration subagents to map this repo costs an order of magnitude more than reading every line of it — three of them once ran up 206k tokens to summarise files that fit comfortably in context. Grep and read directly.
+
+**The two existing balance harnesses both measure the ladder from the wrong seat, and `probe.mjs` exists because of it.** `diff-test` puts **one** realm on the rung against four Duelists; `sim-test` puts **all five** on the same rung. The player is on `D[1]` against **four** AI realms all on `D[S.diff]`, and nothing measured that until round 31. It matters enormously, because an edge held by four opponents compounds: `diff-test` reads the rungs as 0 / 19.5 / 57 / 77, but from the player's chair the same table reads **19.5 / 3.0 / 2.0** — Warlord and Tyrant nearly indistinguishable, and both a cliff rather than a step down from Duelist. `probe.mjs` runs realm 0 as an AI on Duelist against four on the rung and reports win share *and* the enemy army sizes; it is the harness to reach for when a report is about how the game feels to play rather than whether the sim terminates.
+
+**Round 31 took Warlord's `cap` from 1.45 to 1.25** on a report of unbeatable massed armies. The sweep is the useful part, at 150–200 games a rung across two seed ranges:
+
+| `D[2].cap` | player win share | enemy total warriors, p50 | biggest enemy host, p50 |
+|---|---|---|---|
+| 1.45 | 3.3% / 6.0% | 1347 / 1376 | 423 / 437 |
+| 1.30 | 5.5% / 6.5% | 1275 / 1258 | 423 / 408 |
+| **1.25** | **7.3% / 7.3%** | **1264 / 1245** | **418 / 424** |
+| 1.20 | 6.5% / 5.5% | 1218 / 1218 | 424 / 422 |
+| 1.15 | 8.5% / 7.5% | 1159 / 1171 | 374 / 372 |
+| 1.10 | 10.7% / 10.0% | 1156 / 1139 | 397 / 381 |
+| 1.00 | 8.0% / 10.0% | 1059 / 1043 | 365 / 385 |
+
+Read two things off it. **The army-size columns move monotonically and the win column does not** — `cap` 1.0 is no better for the player than 1.1, because below roughly 1.1 the ceiling stops being what binds and the rung's edge comes from gold instead. And **win share is noisy between seed ranges** — at 1.15 a third range (13000) read 5.0% both before and after, against 3.0→8.5 and 6.0→7.5 on the other two. Read the table as a shape, not as six decimal places: every step down the `cap` column buys the player a point or two and takes ~5% off the armies he faces, and **the army columns are the ones that move in every range**, which is what the report was actually about. The shipped 1.25 is the conservative end of it — the brief was "a little" — and 1.15 and 1.10 are the next two stops if it is still too steep.
+
+**`acts` was the obvious suspect and is not the lever.** Dropping Warlord to `acts: 1` alongside the new cap measured 5.0 / 6.0 / 8.5% — no better than leaving it at 2. The rung's remaining difficulty is `inc` (1.6x gold, which compounds over a war), so that is the knob if Warlord needs to come down further, with a full re-run.
+
+`diff-test` at 200 a rung went **0 / 19.5 / 57.0 / 77.0 → 0 / 19.5 / 54.5 / 77.0**, still monotonic (48.5% at `cap` 1.15, for reference). The before run reproduced this file's round-30 figures to the game, which is what makes it a control.
 
 **Measure, don't assume.** The balance is tuned against 400-game runs across independent seed ranges, reading p50/p90/p99/max, stalemate count and win distribution. A change is not done until those numbers are back. Two recurring traps: p99 and the tail move long before p50 does, and a single seed range cannot distinguish faction bias from noise.
 

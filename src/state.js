@@ -90,7 +90,7 @@ export const T = {
 export const D = [
   { nm: 'Dreamer', inc: 0.5, acts: 1, cap: 0.5, pac: 0.6 },
   { nm: 'Duelist', inc: 1, acts: 1, cap: 1, pac: 1 },
-  { nm: 'Warlord', inc: 1.6, acts: 2, cap: 1.45, pac: 1.15 },
+  { nm: 'Warlord', inc: 1.6, acts: 2, cap: 1.25, pac: 1.15 },
   { nm: 'Tyrant', inc: 2.3, acts: 3, cap: 1.9, pac: 1.62 }
 ]
 export const applyDiff = () => S.F.forEach(f => { f.dm = f.ai ? D[S.diff] : D[1] })

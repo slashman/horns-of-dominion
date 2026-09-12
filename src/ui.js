@@ -148,10 +148,14 @@ export function title () {
 
 // one word, one number: the campaign is scored in the days it took and nothing
 // else. Real time was never the game's own clock, and a tally of cities and
-// broken hosts said what the board had already shown for the whole war
+// broken hosts said what the board had already shown for the whole war.
+// The scenario is named only when the board is really its board — a seed in the
+// URL hash overrides the scenario's own on boot, and that is the one case where
+// naming it would put a campaign's title on a map it never generated
 export function ending () {
+  const c = SCN[S.scn]
   ov.innerHTML = `<h1>${S.over > 0 ? 'Victory' : 'Defeat'}</h1>` +
-    `<p>${S.F[S.me].em} ${S.F[S.me].nm} · ${D[S.diff].nm}</p>` +
+    `<p>${S.seed === c[1] ? c[0] + ' · ' : ''}${S.F[S.me].em} ${S.F[S.me].nm} · ${D[S.diff].nm}</p>` +
     `<div class=tally><b>${days()}</b><span>days</span></div>` +
     `<button data-a=n>Back</button>`
 }

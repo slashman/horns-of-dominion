@@ -60,7 +60,7 @@ const { S, T, W, H } = await import('./src/state.js')
 const { active, seeArmy } = await import('./src/sim.js')
 const { cityR, V } = await import('./src/render.js')
 const { SCN } = await import('./src/map.js')
-const { TIP } = await import('./src/ui.js')
+const { TIP, ending } = await import('./src/ui.js')
 const { mute } = await import('./src/audio.js')
 await import('./src/main.js')
 
@@ -723,6 +723,19 @@ ok(!/taken|💔|hosts broken|\d+m \d+s/.test(els.ov.innerHTML),
   'with no city tally, no broken hosts and no real-time clock')
 ok(/<h1>(Victory|Defeat)<\/h1>/.test(els.ov.innerHTML),
   'and a one-word verdict for a title')
+// the campaign is named by the scenario it was fought on — read off SCN rather
+// than quoted, so renaming a scenario cannot go stale here
+ok(els.ov.innerHTML.includes(SCN[S.scn][0]),
+  `and the scenario it was fought on (${SCN[S.scn][0]})`)
+// ...but only when the board really is that scenario's. A seed in the URL hash
+// overrides the scenario's own on boot, and that is the one case where naming it
+// would put a campaign's title on a map it never generated. Without this the
+// guard can be deleted and every other end-screen assertion still passes
+const realSeed = S.seed
+S.seed = 424242; ending()
+ok(!els.ov.innerHTML.includes(SCN[S.scn][0]) && /Victory|Defeat/.test(els.ov.innerHTML),
+  'and a board a pasted seed generated is not credited to a scenario')
+S.seed = realSeed; ending()
 const seedWas = S.seed
 click('n')
 ok(S.over === 0 && S.C.length === 20 && els.ov.innerHTML.includes('Horns of Dominion'), 'restart returns to the title')

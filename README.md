@@ -23,8 +23,7 @@ different ages of one world.
 | **III. The Radiant Spire** | Verdant 13th, 14001 | more roads than any age before, and longer |
 
 Time runs in the Mazurian Age: thirteen months of twenty-eight days, **Auriel** through
-**Lunaris**, and your campaign is scored in the days it took you. Put a seed in the URL
-hash (`#12345`) and it overrides the scenario's map on the next boot.
+**Lunaris**, and your campaign is scored in the days it took you.
 
 ## Playing
 
@@ -37,11 +36,11 @@ hash (`#12345`) and it overrides the scenario's map on the next boot.
 A first game walks you through that in seven tips floating over your capital. Dismiss
 them whenever you like; they do not come back.
 
-**The map carries the state, not the panels.** Ownership is the ring colour. The ring
-around a city is its walls. The number under a host is bodies; the amber arc around it is
-how spent they are. ⬆️ marks a city that can raise something right now, ⏳ one mid-muster,
-✊ one too restless to conscript, and a glyph at the lower right marks what that city
-breeds. A host under command draws a dashed path to where it is going.
+In the map, ownership is the ring colour. The ring around a city is its walls. The number
+under a host is bodies; the amber arc around it is how spent they are. ⬆️ marks a city that
+can raise something right now, ⏳ one mid-muster, ✊ one too restless to conscript, and a
+glyph at the lower right marks what that city breeds. A host under command draws a dashed
+path to where it is going.
 
 ## Three kinds of warband
 
@@ -59,11 +58,11 @@ Every muster is the same forty bodies whatever it raises, so the number under a 
 always a headcount. Kinds will not pool: a mixed force is several warbands standing
 together, fanned around their city.
 
-**The triangle inverts with the ground.** On a road a host fights at the pace it marches —
-outrun what you land on and you caught it strung out — so unicorns break footmen, footmen
-break behemoths, and unicorns maul behemoths worst of all. Behind walls speed counts for
-nothing: behemoths breach in a fraction of the time and unicorns are no siege engine at all.
-Catching a behemoth column between cities is the best thing a unicorn ever does.
+On a road a host fights at the pace it marches — outrun what you land on and you caught it
+strung out — so unicorns break footmen, footmen break behemoths, and unicorns maul behemoths
+worst of all. Behind walls speed counts for nothing: behemoths breach in a fraction of the
+time and unicorns are no siege engine at all. Catching a behemoth column between cities is
+the best thing a unicorn ever does.
 
 One rule underpins it: **numbers are health**. Damage comes off bodies while a kind's
 strength only multiplies what it deals, so fifty behemoths lose to a hundred footmen for
@@ -81,11 +80,11 @@ outside it, less the speed and plus home ground: a host on a city of its own rea
 and only once there is nobody left to fight, at which point it is an attrition tax on the
 besiegers while the wall points set the clock.
 
-**A city remembers the banner it was drafted under.** Conquer it and it seethes, riots,
-and throws you out — no mob, no siege, it simply goes home — unless you leave men enough
-to sit on it — roughly one warrior for every seven souls, and twice that to calm it quickly. Those are men not
-marching on the next wall. A realm ground down to a rump rallies nobody, so its lost
-cities settle and a conquest can finish.
+**A city remembers the banner it was drafted under.** Conquer it and it seethes, riots, and
+throws you out — no mob, no siege, it simply goes home — unless you leave men enough to sit
+on it — roughly one warrior for every seven souls, and twice that to calm it quickly. Those
+are men not marching on the next wall. A realm ground down to a rump rallies nobody, so its
+lost cities settle and a conquest can finish.
 
 **The fog hides intent, never ground.** You see a city while you hold it, border it, or
 stand a host on it; a road while it touches your land or one of your hosts walks it.
@@ -142,6 +141,9 @@ quantities alone, so the whole game speeds up or slows down without a single bal
 ratio shifting.
 
 ## Credits
+
+- Music: **rybar**
+- Design and programming: **slashie**
 
 `src/player.js` is [SoundBox](https://sb.bitsnbites.eu/)'s `player-small.js` by Marcus
 Geelnard, under the zlib licence, altered only to export `CPlayer` and drop an unused

@@ -23,6 +23,10 @@ button {
 button:hover:not(:disabled) { background:#332b52; }
 button:disabled { opacity:.35; cursor:default; }
 button.on { background:#4a3d7a; border-color:#7a68b8; }
+/* Start is the one button on the title screen that commits, so it is the one
+   that is sized like it. data-a=b is unique to it — the difficulty rungs sit
+   inside .diff and the end screen's Back is data-a=n */
+[data-a=b] { font-size:19px; font-weight:600; padding:9px 26px; border-radius:8px; }
 #pan, #tip {
   background:#14121fe6; border:1px solid #2a2540; border-radius:8px;
   backdrop-filter:blur(6px);
@@ -55,7 +59,11 @@ button.on { background:#4a3d7a; border-color:#7a68b8; }
 #ov:empty { display:none; }
 #ov h1 { font-size:38px; font-weight:800; letter-spacing:-1px; }
 #ov p { opacity:.65; max-width:440px; }
-#ov h2 { font-size:12px; opacity:.45; }
+/* #ov's gap spaces every child alike, so a heading floated midway between the
+   deck above it and the one it labels. The margin rebalances that in place —
+   24px clear above, 6px below — without setting gap to 0 and then having to
+   give the h1, both decks, the rungs and Start a margin each */
+#ov h2 { font-size:12px; opacity:.45; margin:10px 0 -8px; }
 .diff { display:flex; gap:6px; }
 .tally { display:flex; flex-direction:column; align-items:center; margin:2px 0 6px; }
 .tally b { font-size:22px; font-weight:700; }

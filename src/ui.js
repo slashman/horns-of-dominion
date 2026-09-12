@@ -29,9 +29,11 @@ const btn = (a, i, on, txt) => `<button data-a=${a} data-i=${i}${on ? '' : ' dis
 // sequence cannot run backwards and knows when the last act is done.
 // `$` in a tip is the player's own realm marker, which is how the rest of the
 // game says "yours" — the hud wears the same glyph beside the realm name.
-export const TIP = ['Select any $ city', 'Select the "Raise" button',
-  'Assembling Unit...', 'Select your new unit', 'Select another city to march',
-  'Tap anywhere else to unselect', 'Conquer all cities to win!']
+export const TIP = ['Tap one of YOUR cities<br>(colored $)',
+  'Tap the "Raise" button to muster a warband',
+  'Wait for your unit to muster', 'Tap the new unit by the city',
+  'Tap an enemy city to march on it', 'Tap anywhere else to unselect',
+  'Conquer all cities to win!']
 function tut () {
   // no city of your own left is the end of the tutorial, not no *capital*: the
   // sequence stopped naming the capital, so it stopped depending on holding one
@@ -72,16 +74,16 @@ export function ui () {
     const c = S.C[s.i], own = c.o === S.me, lit = seeCity(s.i)
     const q = '<span style=opacity:.45>???</span>'
     set(pan, `<h3>${lit && c.cap ? '👑' : '🏰'} ${c.nm}</h3>` +
-      row('👥 Populace', lit ? c.p | 0 : q) +
+      row('👥 Militia', lit ? c.p | 0 : q) +
       row('🛡️ Walls', lit ? (c.s | 0) + ' / ' + c.m : q) +
       row('⚔️ Defense', lit ? c.d : q) +
       row('💎 Economy', lit ? c.e : q) +
       row('✊ Unrest', lit ? (c.u | 0) + '%' : q) +
       (own
         ? `<div class=acts>${btn('r', s.i, canRaise(s.i, S.me), c.oc
-            ? `🔒 Cowed — ${(c.oc / T.muster).toFixed(1)} musters`
+            ? `⚔️ Pacifying`
             : c.u >= T.calm
-              ? `✊ Restless ${c.u | 0}% — garrison ${Math.ceil(c.p * T.hold)}`
+              ? `✊ Restless`
               : c.mu
               ? `⏳ Mustering ${(100 - c.mu / T.muster * 100) | 0}%`
                 : `${T.K[0][5]} Raise ${T.raiseW} — 💎${T.K[0][3]} 👥${T.K[0][4]}`)}` +
@@ -99,7 +101,7 @@ export function ui () {
   // A multiplier of 1 is the footman baseline and prints no row at all.
   const K = T.K[a.k], sp = K[2]
   set(pan, `<h3>${K[5]} ${K[6]}</h3>` +
-    row('⚔️ Warriors', a.w | 0) +
+    row('⚔️ Size', a.w | 0) +
     row('💤 Stamina', '<b id=st></b>') +
     mult('💥 Field', K[0]) + mult('🧱 Siege', K[1]) + mult('🐾 March', sp) +
     mult('🏹 Ambush', +(1 + (sp - 1) * T.amb).toFixed(2)) +
@@ -138,6 +140,7 @@ export function title () {
     `<h2>KINGDOM</h2>` +
     `<div class=realms>${REALMS.map(([nm, c, em], i) =>
       `<div class="realm${S.me === i ? ' on' : ''}" data-a=s data-i=${i} style=color:${c}><div class=e>${em}</div><div class=n>${nm}</div></div>`).join('')}</div>` +
+    `<h2>DIFFICULTY</h2>` +
     `<div class=diff>${D.map((d, i) =>
       `<button data-a=d data-i=${i} class="${S.diff === i ? 'on' : ''}">${d.nm}</button>`).join('')}</div>` +
     `<button data-a=b>⚔️ Start</button>`

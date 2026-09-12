@@ -59,7 +59,10 @@ const MINE = [
   // render.js — the camera
   'ox', 'oy', 'lo',
   // song.js / sfx.js — SoundBox fields, read by player.js
-  'songData', 'rowLen', 'patternLen', 'endPattern', 'numChannels'
+  'songData', 'rowLen', 'patternLen', 'endPattern', 'numChannels',
+  // player.js's own methods, and main.js's two hooks. NOT `size` — that is a
+  // Map's, and `play`/`pause`/`loop`/`currentTime` are an Audio element's
+  'init', 'generate', 'createWave', 'start', 'again'
 ]
 
 async function bundle () {

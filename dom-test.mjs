@@ -252,7 +252,7 @@ ok(active() === army, 'and that alone puts it under command')
 // numbers: how many bodies are left and how spent they are. The march is still
 // the map's to tell — a dashed path to a lit destination — so it stays out
 ok(els.pan.innerHTML.includes(T.K[army.k][6]), 'a selected warband names its kind')
-ok(els.pan.innerHTML.includes('⚔️ Warriors</span><span>' + (army.w | 0)), 'and counts its warriors')
+ok(els.pan.innerHTML.includes('⚔️ Size</span><span>' + (army.w | 0)), 'and counts its warriors')
 ok(/💤 Stamina/.test(els.pan.innerHTML), 'and carries a stamina row')
 ok(els.st.textContent === 100 - (army.fg | 0) + '%',
   `whose number is written live, out of the diffed string (${els.st.textContent})`)
@@ -516,7 +516,7 @@ S.sel = { k: 'a', i: 5002 }
 step(2)
 // a host in a fight still reports itself — it just cannot be split. This is the
 // case that used to answer with a blank panel and read as a bug
-ok(/⚔️ Warriors/.test(els.pan.innerHTML), 'a host in a fight still reports itself')
+ok(/⚔️ Size/.test(els.pan.innerHTML), 'a host in a fight still reports itself')
 ok(/Split/.test(els.pan.innerHTML), 'and a fight at a city does not stop you dividing it')
 // the road lock is what does. Ticks are stopped for this so the sim cannot clear
 // the flag between the write and the render
@@ -525,7 +525,7 @@ S.A.find(a => a.id === 5002).st = 1; step(1)
 ok(!/Split/.test(els.pan.innerHTML), 'but a host locked in a road melee cannot be split')
 S.A.find(a => a.id === 5002).st = 0; step(1); S.speed = 4
 S.sel = { k: 'a', i: 5003 }; step(1)
-ok(/⚔️ Warriors/.test(els.pan.innerHTML) && !/Split/.test(els.pan.innerHTML),
+ok(/⚔️ Size/.test(els.pan.innerHTML) && !/Split/.test(els.pan.innerHTML),
   'an enemy host reports the same numbers its disc already draws, and no Split')
 S.sel = { k: 'a', i: 5002 }; step(1)
 const eng = S.A.find(a => a.id === 5002)
@@ -571,7 +571,7 @@ ok(!/\?\?\?/.test(els.pan.innerHTML), 'a city bordering mine reports its numbers
 // populace and walls are the panel's to report — the map used to carry them
 // under every city and carries nothing there now
 const nc = S.C[near]
-ok(els.pan.innerHTML.includes('👥 Populace</span><span>' + (nc.p | 0)),
+ok(els.pan.innerHTML.includes('👥 Militia</span><span>' + (nc.p | 0)),
   'the panel reports the populace')
 ok(els.pan.innerHTML.includes('🛡️ Walls</span><span>' + (nc.s | 0) + ' / ' + nc.m),
   'and what is left of the walls, against what they were')
@@ -687,7 +687,7 @@ ok(S.C[prey].p < popWas * 0.6, `the sacking guts its populace (${popWas | 0} -> 
 ok(S.C[prey].oc > 0, 'and it is left too cowed to conscript')
 S.F[S.me].g = 999
 S.sel = { k: 'c', i: prey }; step(1)
-ok(/Cowed/.test(els.pan.innerHTML), 'the panel says so')
+ok(/Pacifying<\/button>/.test(els.pan.innerHTML), 'the panel says so')
 const before7 = S.A.length
 click('r', prey)
 ok(S.A.length === before7 && !S.C[prey].mu, 'and raising is refused there')
@@ -699,7 +699,7 @@ ok(S.C[prey].u > 0 && els.pan.innerHTML.includes('✊ Unrest</span><span>' + (S.
 ok(!/Loyalty|native|Ionian|Restless/.test(els.pan.innerHTML),
   'and no per-realm loyalty ledger')
 S.C[prey].oc = 0; S.C[prey].u = 95; step(1)
-ok(/Restless 95%/.test(els.pan.innerHTML), 'a restless city says so instead of offering Raise')
+ok(/✊ Restless<\/button>/.test(els.pan.innerHTML), 'a restless city says so instead of offering Raise')
 S.C[prey].u = 0
 
 // run to a conclusion

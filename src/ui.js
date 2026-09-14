@@ -6,7 +6,7 @@ import { raise, split, canRaise, canSplit, getArmy, seeCity, tired, active } fro
 // the calendar. 13 months of 28 days, so a year is 364 and the whole date is one
 // number — S.tick over T.day. Nothing stored, nothing to reset between games.
 const MON = 'Auriel Florin Rainmere Verdant Solara Lumin Hearth Aureon Fallow Mistral Ember Frost Lunaris'.split(' ')
-const days = () => S.tick / T.day | 0
+export const days = () => S.tick / T.day | 0
 // the suffix only ever has to be right for 1 to 28, which is why % 20 is enough
 const ord = d => d + (d % 20 === 1 ? 'st' : d % 20 === 2 ? 'nd' : d % 20 === 3 ? 'rd' : 'th')
 // the campaign's own days are the score; the scenario's first day only shifts

@@ -39,6 +39,23 @@ globalThis.Audio = class {
   pause () { this.paused = true }
 }
 
+// Wavedash injects this ahead of the bundle on its own host, so nothing else
+// ever defines it. Stubbing it here is the only way the call is exercised at
+// all — and, because this is the one harness that runs the MANGLED bundle, the
+// only way `init` slipping back into build.mjs's allowlist can be caught. It
+// was in there for one round and turned the call into `Wavedash.Mt()`.
+const wd = []
+globalThis.Wavedash = {
+  init: (...a) => wd.push(['init', ...a]),
+  updateLoadProgressZeroToOne: p => wd.push(['progress', p]),
+  LeaderboardSortOrder: { ASC: 0, DESC: 1 },
+  LeaderboardDisplayType: { NUMERIC: 0, TIME_SECONDS: 1, TIME_MILLISECONDS: 2, TIME_GAME_TICKS: 3 },
+  getOrCreateLeaderboard: (name, sort, disp) =>
+    (wd.push(['board', name, sort, disp]), Promise.resolve({ success: true, data: { id: 'lb1' } })),
+  uploadLeaderboardScore: (id, score, keep) =>
+    (wd.push(['score', id, score, keep]), Promise.resolve({ success: true, data: { globalRank: 1 } }))
+}
+
 let fail = 0
 const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fail = 1 }
 
@@ -51,6 +68,9 @@ const js = html.split('<script>')[1].split('</script>')[0]
 new Function(js)()
 
 ok(/Horns of Dominion/.test(els.ov.innerHTML), 'minified bundle boots to the title screen')
+// the game stays hidden behind Wavedash's loading screen until init() is
+// called, so this failing means the shipped build never appears on the host
+ok(wd.some(c => c[0] === 'init'), 'and tells Wavedash it has loaded, through the mangled bundle')
 const tap = (a, i) => {
   const el = { dataset: { a, i }, closest: () => el }
   win.h.click({ target: el })
@@ -92,6 +112,13 @@ ok(/Victory|Defeat/.test(els.ov.innerHTML), 'the packed build plays a whole war 
 ok(/<b>\d+<\/b>/.test(els.ov.innerHTML), 'and scores it in days')
 ok(els.hud.innerHTML !== early && /year \d+/.test(early),
   'while the calendar ran under it')
+// this run ends in a Defeat — the player realm is never driven, so no realm
+// choice here reaches a Victory. That makes a positive leaderboard assertion
+// vacuous, which is why the submission's logic is pinned in dom-test and its
+// SDK names are pinned by build.mjs before roadroller hides them. What IS
+// testable here is the other half of the rule: a lost war scores nothing.
+ok(!wd.some(c => c[0] === 'score' || c[0] === 'board'),
+  'and a defeat is not put on a leaderboard')
 
 console.log(fail ? '\nFAILURES' : '\nall good')
 process.exit(fail)

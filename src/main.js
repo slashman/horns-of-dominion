@@ -1,10 +1,10 @@
-import { S, applyDiff } from './state.js'
+import { S, D, applyDiff } from './state.js'
 import { genMap, SCN } from './map.js'
 import { tick, order, seeArmy, active, fighting } from './sim.js'
 import { ai } from './ai.js'
 import { resize, draw, toWorld, cityR, cv, pan, zoom, gaze } from './render.js'
 import { paint } from './terrain.js'
-import { ui, title, ending, clearOv, hooks } from './ui.js'
+import { ui, title, ending, clearOv, hooks, days } from './ui.js'
 import { grind, music, mute, chime, fanfare, clash } from './audio.js'
 
 const TICK = 0.5          // seconds of real time per tick at 1×
@@ -45,7 +45,7 @@ function frame (ts) {
     while (acc >= TICK && guard++ < 8) { acc -= TICK; tick(); ai() }
     S.alpha = Math.min(1, acc / TICK)
     if (S.toastT > 0 && (S.toastT -= dt) <= 0) S.toast = ''
-    if (S.over) { ending(); if (S.over > 0) fanfare() }   // the din stops itself below
+    if (S.over) { ending(); if (S.over > 0) { fanfare(); rank() } }   // the din stops itself below
   }
   draw(dt)
   // the din is derived, like the fog — see fighting() in sim.js. a paused board
@@ -148,3 +148,32 @@ resize()
 fresh()
 title()
 requestAnimationFrame(frame)
+
+// Wavedash keeps the game behind its loading screen until this is called, and
+// injects the SDK itself on its own host — so the call is guarded exactly the
+// way audio.js guards `Audio`, or the game stops booting in every harness, on
+// the dev server and off a plain file. The board is loaded the moment the title
+// is up: the terrain is baked in fresh(), and the song grinds a slice a frame
+// after this, so there is nothing left to wait on.
+// `init` MUST NOT go back in the build's mangle allowlist — see build.mjs.
+if (typeof Wavedash !== 'undefined') Wavedash.init()
+
+// One leaderboard per scenario per rung — twelve in all — and a score only ever
+// goes to the board for the map it was actually played on. A seed from the URL
+// hash makes a map nobody else can be ranked against, which is the same guard
+// the end screen uses to decide whether to name the scenario at all.
+// Only a victory scores: the number is the days a conquest took, so a defeat has
+// nothing to report. It is the end screen's own days(), not a second sum.
+// The name is built from strings the bundle already carries, so twelve boards
+// cost very little more than one would.
+function rank () {
+  if (typeof Wavedash === 'undefined' || S.seed !== SCN[S.scn][1]) return
+  // best-effort, and deliberately so: the war is over and the end screen is
+  // already drawn, so nothing here may throw into the render loop. This is not
+  // the silent `catch {}` the build once hid a missing compressor in — there is
+  // no fact being swallowed, only a network that may not answer.
+  Wavedash.getOrCreateLeaderboard(`${SCN[S.scn][0]} · ${D[S.diff].nm}`,
+    Wavedash.LeaderboardSortOrder.ASC, Wavedash.LeaderboardDisplayType.NUMERIC)
+    .then(r => r.success && Wavedash.uploadLeaderboardScore(r.data.id, days(), true))
+    .catch(() => {})
+}

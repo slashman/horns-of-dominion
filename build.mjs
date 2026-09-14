@@ -6,7 +6,13 @@ import { crc32, deflateRawSync } from 'zlib'
 import zopfli from '@gfx/zopfli'
 import http from 'http'
 
-const LIMIT = 13312
+// js13k's budget, and the constant the whole codebase is designed around.
+const JS13K = 13312
+// ...but this branch ships to Wavedash, not to js13k: the SDK is injected by the
+// host and never rides in our zip, so the gate is raised rather than removed.
+// The js13k figure is still printed on every build — a budget you stop seeing is
+// a budget you blow, and main branch still has to come in under it.
+const LIMIT = 15360
 const DEV = process.argv.includes('--dev')
 const QUIET = process.argv.includes('--quiet')
 const RAW = process.argv.includes('--raw')     // skip roadroller, to compare
@@ -61,8 +67,14 @@ const MINE = [
   // song.js / sfx.js — SoundBox fields, read by player.js
   'songData', 'rowLen', 'patternLen', 'endPattern', 'numChannels',
   // player.js's own methods, and main.js's two hooks. NOT `size` — that is a
-  // Map's, and `play`/`pause`/`loop`/`currentTime` are an Audio element's
-  'init', 'generate', 'createWave', 'start', 'again'
+  // Map's, and `play`/`pause`/`loop`/`currentTime` are an Audio element's.
+  // NOT `init` either, and it must never come back: `Wavedash.init()` in
+  // main.js lands on an SDK injected by the host, which is the textbook case
+  // this allowlist exists to prevent. It was in here for one round and turned
+  // that call into `Wavedash.Mt()`, which throws on the host and leaves the game
+  // behind Wavedash's loading screen for ever. `dist-test` stubs the SDK and
+  // fails if it is re-added.
+  'generate', 'createWave', 'start', 'again'
 ]
 
 async function bundle () {
@@ -136,6 +148,18 @@ async function build () {
     bundled = 'document.head.appendChild(document.createElement("style")).innerHTML=' +
       JSON.stringify(minifyCss(css)) + ';' + bundled
   }
+  // The Wavedash SDK is not ours to rename, and mangleProps renames a property
+  // everywhere in the bundle at once — one bad entry in MINE turns
+  // Wavedash.init() into Wavedash.Mt(), which throws on the host and leaves the
+  // game behind the loading screen for ever. `init` was in that list for one
+  // round and did exactly this. Checked here because it is the last moment the
+  // names are still legible: roadroller encodes the payload, so nothing
+  // downstream — dist-test included — can grep for them.
+  for (const n of ['init', 'getOrCreateLeaderboard', 'uploadLeaderboardScore',
+    'LeaderboardSortOrder', 'LeaderboardDisplayType']) {
+    if (!bundled.includes('.' + n)) throw new Error(`build: mangled a Wavedash SDK name (.${n}) — check MINE`)
+  }
+
   const js = await pack(bundled)
   let html = readFileSync('src/index.html', 'utf8')
   if (!DEV) html = minifyHtml(html)
@@ -159,8 +183,11 @@ async function build () {
     console.log(`  zip    ${zipHow}`)
     console.log(`  zipped ${zipped.toLocaleString()} B / ${LIMIT.toLocaleString()} B  (${pct}%)`)
     console.log(left >= 0 ? `  headroom ${left.toLocaleString()} B` : `  OVER BUDGET by ${(-left).toLocaleString()} B`)
+    const j = JS13K - zipped
+    console.log(j >= 0 ? `  js13k  ${JS13K.toLocaleString()} B — ${j.toLocaleString()} B spare`
+      : `  js13k  ${JS13K.toLocaleString()} B — OVER by ${(-j).toLocaleString()} B`)
   } else {
-    console.log(`${zipped} / ${LIMIT} (${pct}%)`)
+    console.log(`${zipped} / ${LIMIT} (${pct}%)  [js13k ${JS13K}: ${JS13K - zipped}]`)
   }
   return left
 }

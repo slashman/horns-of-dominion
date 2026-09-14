@@ -39,6 +39,20 @@ globalThis.innerHeight = 800
 globalThis.addEventListener = (t, f) => { win.h[t] = f }
 let rafq = []
 globalThis.requestAnimationFrame = f => rafq.push(f)
+// Wavedash injects this on its own host and nowhere else, so main.js guards
+// every call on `typeof Wavedash`. Stubbing it is what makes the leaderboard
+// path run at all — its SDK names are pinned separately, at build time, because
+// roadroller hides them from dist-test (see build.mjs)
+const wd = []
+globalThis.Wavedash = {
+  init: () => wd.push(['init']),
+  LeaderboardSortOrder: { ASC: 0, DESC: 1 },
+  LeaderboardDisplayType: { NUMERIC: 0, TIME_SECONDS: 1, TIME_MILLISECONDS: 2, TIME_GAME_TICKS: 3 },
+  getOrCreateLeaderboard: (name, sort, disp) =>
+    (wd.push(['board', name, sort, disp]), Promise.resolve({ success: true, data: { id: 'lb1' } })),
+  uploadLeaderboardScore: (id, score, keep) =>
+    (wd.push(['score', id, score, keep]), Promise.resolve({ success: true, data: { globalRank: 1 } }))
+}
 
 // audio: Node has Blob and URL.createObjectURL already, so only the element is
 // stubbed. The tracks are ground for real, which is the point — a broken effect
@@ -56,7 +70,7 @@ globalThis.Audio = class {
   pause () { this.paused = true }
 }
 
-const { S, T, W, H } = await import('./src/state.js')
+const { S, T, D, W, H } = await import('./src/state.js')
 const { active, seeArmy } = await import('./src/sim.js')
 const { cityR, V } = await import('./src/render.js')
 const { SCN } = await import('./src/map.js')
@@ -754,6 +768,9 @@ click('b')
 ok(!played.includes(CHIME) && played.includes(SONG),
   'and Start brings the song up instead, which is why it does not chime under it')
 step(2)
+// a war worth some days, or the leaderboard's score assertion below compares
+// zero against zero and a hard-coded score would satisfy it
+S.tick = 5000
 S.C.forEach(c => { c.o = S.me })
 S.fx = [{ x: S.C[0].x, y: S.C[0].y, k: 1, l: 1 }]   // and a fight still on screen
 played.length = 0
@@ -762,6 +779,28 @@ step(4, 100)
 ok(S.over > 0, 'holding every city wins')
 ok(played.includes(FANFARE), 'and the fanfare sounds for it')
 ok(made[CLASH].paused, 'while the din stops even with a clash still drawn')
+
+// --- the leaderboard: one per scenario per rung, wins only, scenarios only ---
+// the submission is a promise chain, so it lands a microtask after the frame
+await Promise.resolve()
+const board = wd.find(c => c[0] === 'board')
+ok(board && board[1] === `${SCN[S.scn][0]} · ${D[S.diff].nm}`,
+  `a win goes to the board for its scenario and rung (${board && board[1]})`)
+// ASC or the ladder ranks the slowest conquest first, which is the one mistake
+// here that would look like it worked
+ok(board && board[2] === Wavedash.LeaderboardSortOrder.ASC, 'ranked fewest days first')
+ok(board && board[3] === Wavedash.LeaderboardDisplayType.NUMERIC, 'and scored as a plain number')
+const sub = wd.find(c => c[0] === 'score')
+ok(sub && sub[1] === 'lb1' && sub[2] === (S.tick / T.day | 0),
+  `with the end screen's own day count (${sub && sub[2]})`)
+ok(sub && sub[3] === true, 'keeping the best run, not the latest')
+// ...and not for a board the scenario never generated. Same rule as the end
+// screen's scenario name: a pasted seed is a map nobody can be ranked against
+wd.length = 0
+const lbSeed = S.seed
+S.seed = 424242; S.over = 0; S.C.forEach(c => { c.o = S.me }); step(4, 100)
+ok(S.over > 0 && !wd.length, 'but a board from a pasted seed is not ranked at all')
+S.seed = lbSeed
 
 // --- the camera: a phone fits the height and pans across it ---------------
 // Where the board already fits the frame — every landscape frame, so every
